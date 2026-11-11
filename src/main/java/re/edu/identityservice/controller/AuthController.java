@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import re.edu.identityservice.dto.LoginRequest;
 import re.edu.identityservice.dto.RegisterRequest;
+import re.edu.identityservice.dto.TokenResponse;
 import re.edu.identityservice.dto.UserResponse;
 import re.edu.identityservice.service.AuthService;
 
@@ -24,4 +26,23 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+
+    @GetMapping("/test-token")
+    public ResponseEntity<TokenResponse> testToken(
+            @RequestParam String username
+    ) {
+        TokenResponse response = authService.generateTestToken(username);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponse> login(
+            @RequestBody LoginRequest request
+    ) {
+        TokenResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
+    }
+
 }

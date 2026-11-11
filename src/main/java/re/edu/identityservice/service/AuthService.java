@@ -4,16 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import re.edu.identityservice.dto.LoginRequest;
 import re.edu.identityservice.dto.RegisterRequest;
+import re.edu.identityservice.dto.TokenResponse;
 import re.edu.identityservice.dto.UserResponse;
 import re.edu.identityservice.entity.User;
 import re.edu.identityservice.repository.UserRepository;
+import re.edu.identityservice.util.JwtUtil;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     // Xử lý đăng ký tài khoản
     @Transactional
@@ -56,4 +60,53 @@ public class AuthService {
                 savedUser.getRole()
         );
     }
+
+    public TokenResponse generateTestToken(String username) {
+
+        // 1. Tìm User trong Database
+        User user = userRepository.findByUsername(username);
+
+        // 2. Kiểm tra User có tồn tại không
+        if (user == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+
+        // 3. Tạo JWT từ thông tin User
+        String token = jwtUtil.generateToken(user);
+
+        // 4. Trả JWT
+        return new TokenResponse(token);
+    }
+
+    public TokenResponse login(LoginRequest request) {
+
+        // 1. Tìm người dùng theo username
+        User user = userRepository.findByUsername(request.username());
+
+        // 2. Kiểm tra tài khoản có tồn tại không
+        if (user == null) {
+            throw new RuntimeException(
+                    "Username hoặc password không chính xác"
+            );
+        }
+
+        // 3. Kiểm tra mật khẩu
+        boolean passwordMatches = passwordEncoder.matches(
+                request.password(),
+                user.getPassword()
+        );
+
+        if (!passwordMatches) {
+            throw new RuntimeException(
+                    "Username hoặc password không chính xác"
+            );
+        }
+
+        // 4. Tạo JWT
+        String token = jwtUtil.generateToken(user);
+
+        // 5. Trả token về Client
+        return new TokenResponse(token);
+    }
+
 }
